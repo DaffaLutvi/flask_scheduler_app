@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Booking Manual Jadwal</h2>
+    <div class="card p-4">
+        <form method="POST" action="">
+            {{ form.csrf_token }}
+            <div class="mb-3">
+                {{ form.dosen_name.label(class="form-label") }}
+                {{ form.dosen_name(class="form-control") }}
+                {% if form.dosen_name.errors %}
+                    {% for error in form.dosen_name.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                {{ form.mata_kuliah.label(class="form-label") }}
+                {{ form.mata_kuliah(class="form-control") }}
+                {% if form.mata_kuliah.errors %}
+                    {% for error in form.mata_kuliah.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                {{ form.kelas.label(class="form-label") }}
+                {{ form.kelas(class="form-control") }}
+                {% if form.kelas.errors %}
+                    {% for error in form.kelas.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                {{ form.day.label(class="form-label") }}
+                {{ form.day(class="form-select") }}
+                {% if form.day.errors %}
+                    {% for error in form.day.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.start_time.label(class="form-label") }}
+                    {{ form.start_time(class="form-control") }}
+                    {% if form.start_time.errors %}
+                        {% for error in form.start_time.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.end_time.label(class="form-label") }}
+                    {{ form.end_time(class="form-control") }}
+                    {% if form.end_time.errors %}
+                        {% for error in form.end_time.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="mb-3">
+                {{ form.class_type.label(class="form-label") }}
+                {{ form.class_type(class="form-select", id="class_type_select") }}
+                {% if form.class_type.errors %}
+                    {% for error in form.class_type.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div id="offline_details" style="display: {% if form.class_type.data == 'Offline' %}block{% else %}none{% endif %};">
+                <div class="mb-3">
+                    {{ form.building.label(class="form-label") }}
+                    {{ form.building(class="form-select", id="building_select") }}
+                    {% if form.building.errors %}
+                        {% for error in form.building.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.floor.label(class="form-label") }}
+                    {{ form.floor(class="form-select", id="floor_select") }}
+                    {% if form.floor.errors %}
+                        {% for error in form.floor.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.room.label(class="form-label") }}
+                    {{ form.room(class="form-select", id="room_select") }}
+                    {% if form.room.errors %}
+                        {% for error in form.room.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Tambah Jadwal</button>
+        </form>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const classTypeSelect = document.getElementById('class_type_select');
+        const offlineDetails = document.getElementById('offline_details');
+        const buildingSelect = document.getElementById('building_select');
+        const floorSelect = document.getElementById('floor_select');
+        const roomSelect = document.getElementById('room_select');
+
+        function toggleOfflineDetails() {
+            if (classTypeSelect.value === 'Offline') {
+                offlineDetails.style.display = 'block';
+            } else {
+                offlineDetails.style.display = 'none';
+            }
+        }
+
+        classTypeSelect.addEventListener('change', toggleOfflineDetails);
+
+        // Fetch floors when building changes
+        buildingSelect.addEventListener('change', function() {
+            const buildingName = this.value;
+            if (buildingName) {
+                fetch(`/get_floors/${buildingName}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        floorSelect.innerHTML = '<option value="">Pilih Lantai</option>';
+                        data.forEach(floor => {
+                            const option = document.createElement('option');
+                            option.value = floor[0];
+                            option.textContent = floor[1];
+                            floorSelect.appendChild(option);
+                        });
+                        roomSelect.innerHTML = '<option value="">Pilih Ruangan</option>'; // Reset rooms
+                    })
+                    .catch(error => console.error('Error fetching floors:', error));
+            } else {
+                floorSelect.innerHTML = '<option value="">Pilih Lantai</option>';
+                roomSelect.innerHTML = '<option value="">Pilih Ruangan</option>';
+            }
+        });
+
+        // Fetch rooms when floor changes
+        floorSelect.addEventListener('change', function() {
+            const buildingName = buildingSelect.value;
+            const floorNum = this.value;
+            if (buildingName && floorNum) {
+                fetch(`/get_rooms/${buildingName}/${floorNum}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        roomSelect.innerHTML = '<option value="">Pilih Ruangan</option>';
+                        data.forEach(room => {
+                            const option = document.createElement('option');
+                            option.value = room[0];
+                            option.textContent = room[1];
+                            roomSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error fetching rooms:', error));
+            } else {
+                roomSelect.innerHTML = '<option value="">Pilih Ruangan</option>';
+            }
+        });
+
+        // Initial call to set correct display based on pre-filled form data (e.g., after validation error)
+        toggleOfflineDetails();
+
+        // If page loaded with existing building/floor/room data, populate them
+        if (buildingSelect.value) {
+            const initialBuilding = buildingSelect.value;
+            const initialFloor = floorSelect.value;
+
+            fetch(`/get_floors/${initialBuilding}`)
+                .then(response => response.json())
+                .then(data => {
+                    floorSelect.innerHTML = '<option value="">Pilih Lantai</option>';
+                    data.forEach(floor => {
+                        const option = document.createElement('option');
+                        option.value = floor[0];
+                        option.textContent = floor[1];
+                        if (floor[0] == initialFloor) {
+                            option.selected = true;
+                        }
+                        floorSelect.appendChild(option);
+                    });
+                    // After populating floors, populate rooms if an initial floor was selected
+                    if (initialFloor) {
+                        fetch(`/get_rooms/${initialBuilding}/${initialFloor}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                roomSelect.innerHTML = '<option value="">Pilih Ruangan</option>';
+                                const initialRoom = roomSelect.getAttribute('data-initial-value'); // Store initial room value in a data attribute
+                                data.forEach(room => {
+                                    const option = document.createElement('option');
+                                    option.value = room[0];
+                                    option.textContent = room[1];
+                                    if (room[0] == initialRoom) {
+                                        option.selected = true;
+                                    }
+                                    roomSelect.appendChild(option);
+                                });
+                            })
+                            .catch(error => console.error('Error fetching rooms:', error));
+                    }
+                })
+                .catch(error => console.error('Error fetching floors:', error));
+        }
+    });
+</script>
+{% endblock %}

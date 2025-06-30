@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Ruangan Tersedia</h2>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            Pilih Hari
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('available_rooms') }}">
+                {{ form.csrf_token }}
+                <div class="mb-3">
+                    {{ form.day.label(class="form-label") }}
+                    {{ form.day(class="form-select") }}
+                    {% if form.day.errors %}
+                        {% for error in form.day.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <button type="submit" class="btn btn-primary">Lihat Ketersediaan</button>
+            </form>
+        </div>
+    </div>
+
+    {% if selected_day and available_slots_data %}
+        <h3>Ketersediaan Ruangan untuk Hari {{ selected_day }}</h3>
+        <div class="accordion" id="roomsAccordion">
+            {% for room_full_name, slots in available_slots_data.items() %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ loop.index }}">
+                        <button class="accordion-button {% if loop.index != 1 %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="{% if loop.index == 1 %}true{% else %}false{% endif %}" aria-controls="collapse{{ loop.index }}">
+                            {{ room_full_name }}
+                        </button>
+                    </h2>
+                    <div id="collapse{{ loop.index }}" class="accordion-collapse collapse {% if loop.index == 1 %}show{% endif %}" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#roomsAccordion">
+                        <div class="accordion-body">
+                            <div class="row row-cols-3 row-cols-md-4 g-2">
+                                {% for slot in slots %}
+                                    <div class="col">
+                                        {% set badge_class = {
+                                            'Tersedia': 'bg-success',
+                                            'Terpakai': 'bg-danger',
+                                            'Istirahat': 'bg-warning text-dark'
+                                        }[slot.status] %}
+                                        <div class="card h-100 text-center">
+                                            <div class="card-body p-2">
+                                                <span class="badge {{ badge_class }}">{{ slot.time.strftime('%H:%M') }}</span>
+                                                {% if slot.status == 'Tersedia' %}
+                                                    {% set room_parts = room_full_name.split(' - ') %}
+                                                    {% set building_val = room_parts[0] %}
+                                                    {% set floor_val = room_parts[1].split(' ')[1] %}
+                                                    {% set room_val = room_parts[2] %}
+                                                    <a href="{{ url_for('manual_booking', day=selected_day, start_time=slot.time.strftime('%H:%M'), end_time=(slot.time.replace(hour=slot.time.hour + 1) if slot.time.hour + 1 < 24 else slot.time.replace(hour=23, minute=59)).strftime('%H:%M'), class_type='Offline', building=building_val, floor=floor_val, room=room_val) }}"
+                                                        class="btn btn-sm btn-outline-success mt-1 d-block">Booking</a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% elif selected_day %}
+        <p class="alert alert-info">Tidak ada data ketersediaan ruangan untuk hari {{ selected_day }}.</p>
+    {% endif %}
+{% endblock %}

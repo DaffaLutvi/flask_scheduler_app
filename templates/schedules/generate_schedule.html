@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Generate Jadwal Otomatis</h2>
+    <div class="card p-4">
+        <p>Unggah file Excel/CSV berisi daftar mata kuliah untuk generate jadwal secara otomatis.</p>
+        <p>Pastikan file Anda memiliki kolom-kolom wajib: <strong>MATA KULIAH, SKS, KELAS, DOSEN PENGAJAR</strong>.</p>
+        <p>Anda juga dapat menyertakan kolom opsional seperti <strong>SEMESTER, DOSEN_HARI_KAMPUS, DOSEN_JAM_KAMPUS, TIPE_KELAS</strong>.</p>
+        <a href="{{ url_for('download_template') }}" class="btn btn-info mb-3"><i class="bi bi-file-earmark-arrow-down"></i> Unduh Template Excel</a>
+
+        <form method="POST" action="" enctype="multipart/form-data">
+            {{ form.csrf_token }}
+            <div class="mb-3">
+                {{ form.file.label(class="form-label") }}
+                {{ form.file(class="form-control") }}
+                {% if form.file.errors %}
+                    {% for error in form.file.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-upload"></i> Unggah dan Generate</button>
+        </form>
+    </div>
+
+    <div id="progress-container" class="mt-4" style="display: none;">
+        <h5>Proses Generate Jadwal:</h5>
+        <div class="progress">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="progress-bar">0%</div>
+        </div>
+        <p id="status-message" class="mt-2 text-muted"></p>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Ini adalah placeholder. Untuk progress bar yang sebenarnya, Anda memerlukan AJAX polling
+    // atau WebSockets untuk mendapatkan status dari backend secara real-time.
+    // Misalnya, Anda bisa membuat endpoint Flask yang mengembalikan status progress,
+    // lalu menggunakan setInterval di JavaScript untuk memanggil endpoint tersebut.
+    document.querySelector('form[enctype="multipart/form-data"]').addEventListener('submit', function() {
+        document.getElementById('progress-container').style.display = 'block';
+        document.getElementById('progress-bar').style.width = '10%';
+        document.getElementById('progress-bar').setAttribute('aria-valuenow', '10');
+        document.getElementById('status-message').textContent = 'Memulai proses generate...';
+    });
+</script>
+{% endblock %}

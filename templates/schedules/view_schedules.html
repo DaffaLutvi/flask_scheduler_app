@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Lihat Jadwal</h2>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            Filter Jadwal
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('view_schedules') }}" class="row g-3">
+                {{ form.csrf_token }}
+                <div class="col-md-3">
+                    {{ form.day.label(class="form-label") }}
+                    {{ form.day(class="form-select") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.room.label(class="form-label") }}
+                    {{ form.room(class="form-control") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.kelas.label(class="form-label") }}
+                    {{ form.kelas(class="form-control") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.dosen.label(class="form-label") }}
+                    {{ form.dosen(class="form-control") }}
+                </div>
+                <div class="col-12">
+                    {{ form.submit(class="btn btn-primary me-2") }}
+                    <a href="{{ url_for('view_schedules') }}" class="btn btn-secondary">Reset Filter</a>
+                    {% if schedules %}
+                    <a href="{{ url_for('download_schedules_excel', day=form.day.data, room=form.room.data, kelas=form.kelas.data, dosen=form.dosen.data) }}" class="btn btn-success float-end">
+                        <i class="bi bi-file-earmark-excel"></i> Unduh Excel
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if schedules %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Dosen</th>
+                        <th>Mata Kuliah</th>
+                        <th>Kelas</th>
+                        <th>Hari</th>
+                        <th>Jam</th>
+                        <th>Tipe</th>
+                        <th>Lokasi</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for schedule in schedules %}
+                        <tr>
+                            <td>{{ schedule.dosen_name }}</td>
+                            <td>{{ schedule.mata_kuliah }}</td>
+                            <td>{{ schedule.kelas }}</td>
+                            <td>{{ schedule.day }}</td>
+                            <td>{{ schedule.start_time.strftime('%H:%M') }} - {{ schedule.end_time.strftime('%H:%M') }}</td>
+                            <td>{{ schedule.class_type }}</td>
+                            <td>
+                                {% if schedule.class_type == 'Offline' %}
+                                    {{ schedule.room }} ({{ schedule.building }} Lantai {{ schedule.floor }})
+                                {% else %}
+                                    Online
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                                    <form action="{{ url_for('delete_schedule', schedule_id=schedule.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus jadwal ini?');">
+                                        <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i> Hapus</button>
+                                    </form>
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if current_user.is_authenticated and current_user.role == 'admin' %}
+        <form action="{{ url_for('delete_all_schedules') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus SEMUA jadwal? Tindakan ini tidak dapat dibatalkan.');">
+            <button type="submit" class="btn btn-danger mt-3"><i class="bi bi-x-circle"></i> Hapus Semua Jadwal</button>
+        </form>
+        {% endif %}
+    {% else %}
+        <p class="alert alert-info">Belum ada jadwal yang tersedia atau sesuai dengan filter Anda.</p>
+    {% endif %}
+{% endblock %}
